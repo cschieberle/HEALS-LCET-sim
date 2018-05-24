@@ -2,10 +2,11 @@ options(stringsAsFactors = TRUE)
 library(bit64)
 library(tidyr)
 
+detach("package:lifeCourseExposureTrajectories", unload=TRUE)
 library(devtools)
-devtools::document("I://lifeExposureTrajectories")
-devtools::install("I://lifeExposureTrajectories")
-library(lifeExposureTrajectories)
+devtools::document("..//lifeCourseExposureTrajectories")
+devtools::install("..//lifeCourseExposureTrajectories")
+library(lifeCourseExposureTrajectories)
 
 H.files.cs <- c(
   "K:/EU-SILC cross-sectional/1 C-2004/UDB_c04H_ver 2004-4 from 01-08-09.csv",
@@ -19,7 +20,7 @@ H.files.cs <- c(
   "K:/EU-SILC cross-sectional/9 C-2012/UDB_c12H_ver 2012-3 from 01-03-15.csv",
   "K:/EU-SILC cross-sectional/10 C-2013/UDB_c13H_ver 2013-2 from 01-08-15.csv"
 )
-cs.hh.data.all <- lifeExposureTrajectories::readHouseholdData(H.files.cs)
+cs.hh.data.all <- lifeCourseExposureTrajectories::readHouseholdData(H.files.cs)
 
 P.files.cs <- c(
   "K:/EU-SILC cross-sectional/6 C-2009/UDB_c09P_ver 2009-7 from 01-03-15.csv",
@@ -36,13 +37,14 @@ R.files.cs <- c(
   "K:/EU-SILC cross-sectional/10 C-2013/UDB_c13R_ver 2013-2 from 01-08-15.csv"
 )
 
-cs.data.all <- lifeExposureTrajectories::readIndividualData(P.files.cs, R.files.cs, cs.hh.data.all)
-#hist(cs.data.all$ESTIMATED.AGE)
+cs.data.all <- lifeCourseExposureTrajectories::readIndividualData(P.files.cs, R.files.cs, cs.hh.data.all)
+hist(cs.data.all$ESTIMATED.AGE, breaks=25)
+
 rm(cs.hh.data.all)
 unique(cs.data.all$COUNTRY)
 
-unique(paste(cs.data.all$CURRENT.EDU.TYPE.LABEL, cs.data.all$CURRENT.EDU.TYPE))
-unique(paste(cs.data.all$HIGHEST.ATTAINED.EDU.LABEL, cs.data.all$HIGHEST.ATTAINED.EDU))
+#unique(paste(cs.data.all$CURRENT.EDU.TYPE.LABEL, cs.data.all$CURRENT.EDU.TYPE))
+#unique(paste(cs.data.all$HIGHEST.ATTAINED.EDU.LABEL, cs.data.all$HIGHEST.ATTAINED.EDU))
 
 #temp <- cs.data.all[ cs.data.all$CURRENT.EDU.TYPE == -2 | (as.numeric(cs.data.all$CURRENT.EDU.TYPE) >= as.numeric(cs.data.all$HIGHEST.ATTAINED.EDU) ), ]
 #table(cs.data.all$ECON.STATUS.CURR.SELFDEF)
@@ -57,12 +59,10 @@ H.files.lon <- c(
   "K:/EU-SILC longitudinal/8 L-2012/UDB_l12H_ver 2012-3 from 01-08-2015.csv",
   "K:/EU-SILC longitudinal/9 L-2013/UDB_l13H_ver 2013-1 from 01-08-2015.csv"
 )
-lon.hh.data.all <- lifeExposureTrajectories::readHouseholdData(H.files.lon)
+lon.hh.data.all <- lifeCourseExposureTrajectories::readHouseholdData(H.files.lon)
 
 unique(lon.hh.data.all$COUNTRY)
-## FIXME
-#lon.hh.data.all <- subset(lon.hh.data.all, COUNTRY %in% c("AT", "ES", "FR"))
-lon.hh.data.all <- subset(lon.hh.data.all, COUNTRY %in% c("IT"))
+lon.hh.data.all <- subset(lon.hh.data.all, COUNTRY %in% c("AT"))
 unique(lon.hh.data.all$COUNTRY)
 
 P.files.lon <- c(
@@ -75,7 +75,7 @@ P.files.lon <- c(
   "K:/EU-SILC longitudinal/8 L-2012/UDB_l12P_ver 2012-3 from 01-08-2015.csv",
   "K:/EU-SILC longitudinal/9 L-2013/UDB_l13P_ver 2013-1 from 01-08-2015.csv"
 )
-data.rshp <- lifeExposureTrajectories::readIndividualSeq(P.files.lon, lon.hh.data.all)
+data.rshp <- lifeCourseExposureTrajectories::readIndividualSeq(P.files.lon, lon.hh.data.all)
 unique(data.rshp$CNTRY)
 
 rm(lon.hh.data.all)
@@ -116,162 +116,30 @@ data.seq <- seqdef(data.rshp, 8:11, alphabet = data.alphabet[1:11], states = dat
 # markov.chain <- lifeExposureTrajectories::asMarkovChain(data.seq, data.scodes)
 # lifeExposureTrajectories::plotMarkovChain(markov.chain)
 
-#rm(cs.data.all)
-#rm(data.rshp)
+data.rshp.subset <- lifeCourseExposureTrajectories::stratifiedSeqSample(data.rshp, 0.25)
 
 #help(memory.size)
 #memory.limit(size=48000)
-#gc()
-##submat <- seqsubm(data.seq, method = "TRATE")
-##dist <- seqdist(data.seq, method = "OM", indel = 1, sm = submat)
+rm(data.rshp)
+gc()
 
-######################
-# FIX: http://stackoverflow.com/questions/15929936/problem-with-big-data-during-computation-of-sequence-distances-using-tramine
-#
-library(WeightedCluster)
-ac <- wcAggregateCases(data.rshp[, 8:11])
-ac
+st <- lifeCourseExposureTrajectories::determineSeqTree(data.rshp.subset, dist.method = "OM", dist.indel = 1)
 
-# aggIndex    has  1384 entries from 1 to 56319
-# disaggIndex has 56319 entries from 1 to  1384
-
-data.rshp.subset <- NULL
-for (i in 1:length(ac$aggIndex)) {
-
-  idx <- ac$aggIndex[i]
-  weight <- ac$aggWeights[i]
-  
-  disagg.idx.list <- which(ac$disaggIndex == i)
-  
-  seq.sample.size <- max(1, ceiling(log(weight)), replace = F)
-  
-  data.rshp.i.sample <- data.rshp[ disagg.idx.list[ sample(x = seq(1, length(disagg.idx.list)), size = seq.sample.size) ], ]
-
-  data.rshp.subset <- rbind(data.rshp.subset, data.rshp.i.sample)
-}
-
-# setdiff(
-#   data.frame(data.rshp.subset$ECON.STATUS.CURR.SELFDEF.0, data.rshp.subset$ECON.STATUS.CURR.SELFDEF.1, data.rshp.subset$ECON.STATUS.CURR.SELFDEF.2, data.rshp.subset$ECON.STATUS.CURR.SELFDEF.3),
-#   unique(
-#     data.frame(data.rshp.subset$ECON.STATUS.CURR.SELFDEF.0, data.rshp.subset$ECON.STATUS.CURR.SELFDEF.1, data.rshp.subset$ECON.STATUS.CURR.SELFDEF.2, data.rshp.subset$ECON.STATUS.CURR.SELFDEF.3)
-#   )
-# )
-
-data.seq <- seqdef(data.rshp.subset, 8:11, alphabet = data.alphabet[1:11], states = data.scodes[1:11], labels = data.labels[1:11], xtstep = 1)
-submat <- seqsubm(data.seq, method = "TRATE")
-dist <- seqdist(data.seq, method = "OM", indel = 1, sm = submat)
-
-system.time( 
-  st <- seqtree(data.seq ~ SEX + AGE.AT.FRST.INTRVW, data = data.rshp.subset, R = 1000, diss = dist, pval = 0.05)
+# Install GraphViz if you'd like to see a visualisation of the tree: http://www.graphviz.org
+seqtreedisplay(
+  st, 
+  type = "d", 
+  border = NA, 
+  only.leaf = F, 
+  with.legend = F, 
+  gvpath = 'C:\\Program Files (x86)\\GraphViz'
 )
-seqtreedisplay(st, type = "d", border = NA, imgLeafOnly = F, withlegend = F)
 
+df <- lifeCourseExposureTrajectories::traversePreOrder(st$root)
 
-#data.seq.uniq <- seqdef(data.rshp[ac$aggIndex, 8:11], alphabet = data.alphabet, states = data.scodes, labels = data.labels, weights = ac$aggWeights)
-#submat <- seqsubm(data.seq.uniq, method = "TRATE")
-#dist <- seqdist(data.seq.uniq, method = "OM", indel = 1, sm = submat)
-######################
-
-
-#### CLUSTER ####
-
-# # for clustering: temporarily remove states where no transition happens
-# data.rshp.rl <- data.rshp
-# #data.rshp.rl <- subset(data.rshp.rl, !(ECON.STATUS.CURR.SELFDEF.0 == ECON.STATUS.CURR.SELFDEF.1 & ECON.STATUS.CURR.SELFDEF.1 == ECON.STATUS.CURR.SELFDEF.2 & ECON.STATUS.CURR.SELFDEF.2 == ECON.STATUS.CURR.SELFDEF.3))
-# rownames(data.rshp.rl) <- seq(length=nrow(data.rshp.rl))
-# names(data.rshp.rl)[8:11] <- paste0("Y", seq(1:4))
-# 
-# data.seq.rl <- seqdef(data.rshp.rl, 8:11, alphabet = data.alphabet, states = data.scodes, labels = data.labels, xtstep = 1)
-# 
-# rm(submat)
-# rm(dist)
-# submat <- seqsubm(data.seq.rl, method = "TRATE")
-# dist <- seqdist(data.seq.rl, method = "OM", indel = 1, sm = submat)
-# 
-# #install.packages("WeightedCluster")
-# library(WeightedCluster)
-# set.seed(1)
-# 
-# opt.pam <- NULL
-# cl.stats <- NULL
-# for (cl.size in seq(2, 16)) {
-#   pam.data.seq <- wcKMedoids(dist, k = cl.size)
-#   cl.stats <- rbind(
-#     cl.stats, 
-#     pam.data.seq$stats
-#   )
-#   if (is.null(opt.pam)) {
-#     opt.pam <- pam.data.seq
-#   } else {
-#     if (opt.pam$stats["ASW"] < pam.data.seq$stats["ASW"]) {
-#       opt.pam <- pam.data.seq
-#     }
-#   }
-# }
-# cl.stats <- data.frame(cbind(seq(2, 16), cl.stats))
-# cl.stats
-# 
-# dev.off()
-# plot(cl.stats$V1, cl.stats$HG, col="red", pch=0, type="b", ylim = c(0,1), xlim = c(2,16))
-# lines(cl.stats$V1, cl.stats$PBC, col="orange", pch=7, type="b")
-# lines(cl.stats$V1, cl.stats$ASW, col="black", pch=15, type="b")
-# legend(13, 0.4, legend = c("HG", "PBC", "ASW"), lty=c(1,1,1), pch=c(0,7,15), col=c("red", "orange", "black"), cex = 0.8)
-# 
-# #dev.off()
-# par(mar=c(3,4,2,2))
-# seqfplot(data.seq.rl, group = opt.pam$clustering, border = NA)
-# #seqmtplot(data.seq.rl, group = opt.pam$clustering)
-# #seqmsplot(data.seq.rl, group = opt.pam$clustering)
-# opt.pam$stats
-# 
-# rm(data.seq.rl)
-# rm(data.rshp.rl)
-
-#################
-
-# counts <- table(data.rshp[ data.rshp$AGE.AT.FRST.INTRVW <= 77, ]$SEX, data.rshp[ data.rshp$AGE.AT.FRST.INTRVW <= 77, ]$AGE.AT.FRST.INTRVW)
-# barplot(
-#   counts, 
-#   main="Distribution by sex and age (data for Austria), no weights applied",
-#   xlab="age", col=c("lightblue","pink"),
-#   #legend = rownames(counts)
-#   legend = c("Male", "Female"),
-#   ylim=c(0,400),
-#   args.legend = c(x=17)) 
-
-
-## traverse the tree
-##   FIXME 1: country set to AT
-##   FIXME 2: adjust variables list (age, sex) -> (age, sex, income)
-
-df <- lifeExposureTrajectories::traversePreOrder(st$root)
-
-######
-
-cs.data.IT <- cs.data.all[ cs.data.all$COUNTRY == "IT", ]
-cs.data.IT <- cs.data.IT[, c("ECON.STATUS.CURR.SELFDEF", "CURRENT.EDU.TYPE.LABEL", "HIGHEST.ATTAINED.EDU.LABEL", "ESTIMATED.AGE", "SEX", "TOT.DISP.HH.INCOME")]
-#names(cs.data.IT)
-
-#unique(cs.data.IT$HIGHEST.ATTAINED.EDU.LABEL)
-#unique(cs.data.IT$CURRENT.EDU.TYPE.LABEL)
-
-cs.data.IT$EDULEVEL <- -1
-cs.data.IT[ cs.data.IT$HIGHEST.ATTAINED.EDU.LABEL %in% c("NONE", "PRE-PRIMARY", "PRIMARY", "LWR-SECONDARY"), ]$EDULEVEL <- 0
-cs.data.IT[ cs.data.IT$CURRENT.EDU.TYPE.LABEL %in% c("NONE", "PRE-PRIMARY", "PRIMARY", "LWR-SECONDARY"), ]$EDULEVEL <- 0
-
-cs.data.IT[ cs.data.IT$HIGHEST.ATTAINED.EDU.LABEL %in% c("UPR-SECONDARY"), ]$EDULEVEL <- 1
-cs.data.IT[ cs.data.IT$CURRENT.EDU.TYPE.LABEL %in% c("UPR-SECONDARY"), ]$EDULEVEL <- 1
-
-cs.data.IT[ cs.data.IT$HIGHEST.ATTAINED.EDU.LABEL %in% c("TERTIARY"), ]$EDULEVEL <- 2
-cs.data.IT[ cs.data.IT$CURRENT.EDU.TYPE.LABEL %in% c("TERTIARY"), ]$EDULEVEL <- 2
-
-cs.data.IT$HIGHEST.ATTAINED.EDU.LABEL <- NULL
-
-cs.data.IT <- cs.data.IT[ !is.na(cs.data.IT$ECON.STATUS.CURR.SELFDEF), ]
-
-cs.data.IT <- droplevels(cs.data.IT)
-
-
+edu.data <- lifeCourseExposureTrajectories::getCrossSectEdu(cs.data.all, country.filter = unique(data.rshp.subset$CNTRY))
+rm(cs.data.all)
+gc()
 
 ################################
 #
@@ -279,241 +147,9 @@ cs.data.IT <- droplevels(cs.data.IT)
 #
 ################################
 
-parallel.lifetraj <- function(sim.id, INDIV_AGE, INDIV_SEX, INDIV_ACT, INDIV_EDU) {
-  
-  life.traj <- lifeExposureTrajectories::simulate(
-    df,
-    st,
-    indiv.age <- INDIV_AGE,
-    indiv.sex <- INDIV_SEX,
-    indiv.activity <- INDIV_ACT
-  )
-  life.traj$node.id <- NULL
-  life.traj$num.seq <- NULL
-  rownames(life.traj) <- NULL
-  
-  adolesc.age <- min(life.traj$age)
-  sex <- as.integer(life.traj[ life.traj$age == adolesc.age, ]$sex)
-  activity <- as.integer(life.traj[ life.traj$age == adolesc.age, ]$activity.0)
-  activity.label <- data.scodes[ activity ]
-  
-  #model <- lifeExposureTrajectories::adolescModel(cs.data.all)
-  
-  temp <- subset(cs.data.IT, (ESTIMATED.AGE >= adolesc.age-1 & ESTIMATED.AGE <= adolesc.age) & SEX == sex)
-  if (nrow(temp) < 1) {
-    temp <- subset(cs.data.IT, (ESTIMATED.AGE >= adolesc.age & ESTIMATED.AGE <= adolesc.age + 1) & SEX == sex)
-  }
-  #INDIV_HH_INCOME <- as.double(sample(temp$TOT.DISP.HH.INCOME, 1))
-  #INDIV_HH_INCOME <- as.double(round(INDIV_HH_INCOME / 20000) * 20000)
-  
-  #schoolTypeAtAge16 <- lifeExposureTrajectories::predictSchoolTypeProb(sex, activity, INDIV_HH_INCOME, model)
-  #
-  #predict(
-  #  model, 
-  #  type = "prob", 
-  #  newdata = data.frame(
-  #    SEX = sex, 
-  #    TOT.DISP.HH.INCOME = INDIV_HH_INCOME,
-  #    ECON.STATUS.CURR.SELFDEF = activity)
-  #)
-  schoolTypeAtAge16 <- as.data.frame(table(temp$CURRENT.EDU.TYPE.LABEL)/nrow(temp))
-  
-  adolesc.seq <- lifeExposureTrajectories::adolescSeq(schoolTypeAtAge16, n=NUM_SIM)
-  adolesc.seq <- adolesc.seq[ sample(seq(1, nrow(adolesc.seq)), 1), ]
-  for (j in seq(4,0)) {
-    life.traj <- rbind(
-      c(1 + (j * 3), sex, adolesc.seq[1 + (j * 3)], adolesc.seq[2 + (j * 3)], adolesc.seq[3 + (j * 3)]),
-      life.traj
-    )
-  }
-  
-  rownames(life.traj) <- NULL
-  life.traj$sex <- NULL
-  
-  sim.id.df <- rep(sim.id, nrow(life.traj)) 
-  #sim.results <- rbind(sim.results, cbind(data.frame(sim.id.df), life.traj))
-  sim.results <- cbind(data.frame(sim.id.df), life.traj)
-  sim.results.rshp <- reshape(sim.results, direction="wide", timevar="age", idvar="sim.id.df")
-  names(sim.results.rshp)[2:ncol(sim.results.rshp)] <- paste0("Y", seq(1, ncol(sim.results.rshp)-1))
-  return( sim.results.rshp )
-}
 
-determine.full.traj <- function(cl, INDIV_SUBJID, INDIV_AGE, INDIV_SEX, INDIV_EDU, INDIV_ACT) {
-  sim.results.rshp <- mclapply(
-  #sim.results.rshp <- parLapply(
-    #cl,
-    seq(1:NUM_SIM),
-    parallel.lifetraj, INDIV_AGE = INDIV_AGE, INDIV_SEX = INDIV_SEX, INDIV_ACT = INDIV_ACT, INDIV_EDU = INDIV_EDU
-  )
-  sim.results.rshp <- do.call(rbind.data.frame, sim.results.rshp)
-  
-  #seqstatl(sim.results.rshp[, 2:82])
-  
-  # data.alphabet <- c(seq(1, 11), lifeExposureTrajectories::adolescModelAlphabet())
-  # data.labels <- c(
-  #   "Employee working full-time",
-  #   "Employee working part-time",
-  #   "Self-employed working full-time (including family worker)",
-  #   "Self-employed working part-time (including family worker)",
-  #   "Unemployed",
-  #   "Pupil, student, further training, unpaid work experience",
-  #   "In retirement or in early retirement or has given up business",
-  #   "Permanently disabled or/and unfit to work",
-  #   "In compulsory military community or service",
-  #   "Fulfilling domestic tasks and care responsibilities",
-  #   "Other inactive person",
-  #   lifeExposureTrajectories::adolescModelLabels()
-  # )
-  # 
-  # data.scodes <- c(
-  #   c("EWFT",  "EWPT",  "SEFT",  "SEPT",  "UNEM",  "STUD",  "RETD",  "UNFT",  "CMCS",  "DOME",  "INAC"), 
-  #   lifeExposureTrajectories::adolescModelCodes()
-  # )
-  
-  sim.results.grpd <- NULL
-  for (age.export in seq(from=81, to=1)) {
-    life.traj.data <- as.data.frame(table(sim.results.rshp[ , age.export + 1 ]))
-    names(life.traj.data) <- c("EMP.type" ,"EMP.probability")
-    life.traj.data$EMP.probability <- life.traj.data$EMP.probability / NUM_SIM
-    sim.results.grpd <- rbind(
-      sim.results.grpd,
-      cbind(
-        INDIV_SUBJID,
-        age.export,
-        life.traj.data
-      )
-    )
-  }
-  names(sim.results.grpd)[1] <- "USUBJID"
-  names(sim.results.grpd)[2] <- "AGE"
-  
-  emp.type.label <- cbind(as.data.frame(data.alphabet), as.data.frame(data.scodes), as.data.frame(data.labels))
-  names(emp.type.label) <- c("EMP.alphabet", "EMP.scode", "EMP.label")
-  
-  sim.results.grpd <- merge(
-    sim.results.grpd,
-    emp.type.label,
-    by.x = "EMP.type",
-    by.y = "EMP.alphabet"
-  )
-  
-  # reformat
-  sim.results.grpd <- sim.results.grpd[ c("AGE", "EMP.probability", "EMP.scode") ]
-  sim.results.grpd <- sim.results.grpd[ with(sim.results.grpd, order(-AGE, -EMP.probability)), ]
-  
-  sim.results.grpd <- cbind(
-    data.frame(INDIV_SUBJID = rep(INDIV_SUBJID, nrow(sim.results.grpd))),
-    sim.results.grpd
-  )
-  
-  return( sim.results.grpd )
-}
 
-get.exposure.data <- function(INDIV_SUBJID) {
-  # daily exposures
-  exposure.PM25 <- read.csv(paste0("C:\\TEMP\\ITR sample exposure_for Cara\\PM2.5\\PM25_exposure_sample_", INDIV_SUBJID, ".csv"))
-  exposure.PM25$STRESSOR <- "PM25"
-  names(exposure.PM25)
-  
-  exposure.NO2 <- read.csv(paste0("C:\\TEMP\\ITR sample exposure_for Cara\\NO2\\NO2_exposure_sample_", INDIV_SUBJID, ".csv"))
-  exposure.NO2$STRESSOR <- "NO2"
-  names(exposure.NO2)
-  
-  exposure.SOMO35 <- read.csv(paste0("C:\\TEMP\\ITR sample exposure_for Cara\\Ozone\\Ozone_exposure_sample_", INDIV_SUBJID, ".csv"))
-  exposure.SOMO35$STRESSOR <- "SOMO35"
-  names(exposure.SOMO35)
-  
-  exposure.UV <- read.csv(paste0("C:\\TEMP\\ITR sample exposure_for Cara\\UV\\UV_exposure_sample_", INDIV_SUBJID, ".csv"))
-  exposure.UV$STRESSOR <- "UV"
-  names(exposure.UV)
-  
-  exposure.EMF <- read.csv(paste0("C:\\TEMP\\ITR sample exposure_for Cara\\EMF\\EMF_exposure_sample_", INDIV_SUBJID, ".csv"))
-  exposure.EMF$STRESSOR <- "EMF"
-  names(exposure.EMF)
-  
-  exposure.Mould <- read.csv(paste0("C:\\TEMP\\ITR sample exposure_for Cara\\Mould\\Damp_exposure_sample_", INDIV_SUBJID, ".csv"))
-  exposure.Mould$STRESSOR <- "Mould"
-  names(exposure.Mould)
-  
-  exposure.DEHP <- read.csv(paste0("C:\\TEMP\\ITR sample exposure_for Cara\\Phthalates\\DEHP\\DEHP_exposure_sample_", INDIV_SUBJID, ".csv"))
-  exposure.DEHP$STRESSOR <- "DEHP"
-  names(exposure.DEHP)
-  
-  exposure.DIDP <- read.csv(paste0("C:\\TEMP\\ITR sample exposure_for Cara\\Phthalates\\DIDP\\DIDP_exposure_sample_", INDIV_SUBJID, ".csv"))
-  exposure.DIDP$STRESSOR <- "DIDP"
-  names(exposure.DIDP)
-  
-  exposure.DINP <- read.csv(paste0("C:\\TEMP\\ITR sample exposure_for Cara\\Phthalates\\DINP\\DINP_exposure_sample_", INDIV_SUBJID, ".csv"))
-  exposure.DINP$STRESSOR <- "DINP"
-  names(exposure.DINP)
-  
-  exposure.Chromium <- read.csv(paste0("C:\\TEMP\\ITR sample exposure_for Cara\\Food intake\\Chromium\\Chromium_exposure_sample_", INDIV_SUBJID, ".csv"))
-  exposure.Chromium$STRESSOR <- "Chromium"
-  names(exposure.Chromium)
-  exposure.Chromium$income <- NA
-  exposure.Chromium$empstat <- -1000
-  exposure.Chromium$occup <- NA
-  exposure.Chromium$type <- NA
-  exposure.Chromium$comment <- NA
-  exposure.Chromium$retired <- -1000
-  exposure.Chromium$emp <- -1000
-  exposure.Chromium$student <- -1000
-  
-  exposure.Lead <- read.csv(paste0("C:\\TEMP\\ITR sample exposure_for Cara\\Food intake\\Lead\\Lead_exposure_sample_", INDIV_SUBJID, ".csv"))
-  exposure.Lead$STRESSOR <- "Lead"
-  names(exposure.Lead)
-  exposure.Lead$income <- NA
-  exposure.Lead$empstat <- -1000
-  exposure.Lead$occup <- NA
-  exposure.Lead$type <- NA
-  exposure.Lead$comment <- NA
-  exposure.Lead$retired <- -1000
-  exposure.Lead$emp <- -1000
-  exposure.Lead$student <- -1000
-  
-  exposure.Mercury <- read.csv(paste0("C:\\TEMP\\ITR sample exposure_for Cara\\Food intake\\Mercury\\Mercury_exposure_sample_", INDIV_SUBJID, ".csv"))
-  exposure.Mercury$STRESSOR <- "Mercury"
-  names(exposure.Mercury)
-  exposure.Mercury$income <- NA
-  exposure.Mercury$empstat <- -1000
-  exposure.Mercury$occup <- NA
-  exposure.Mercury$type <- NA
-  exposure.Mercury$comment <- NA
-  exposure.Mercury$retired <- -1000
-  exposure.Mercury$emp <- -1000
-  exposure.Mercury$student <- -1000
-  
-  exposure.all <- rbind(
-    exposure.PM25,
-    exposure.NO2,
-    exposure.SOMO35,
-    exposure.UV,
-    exposure.EMF,
-    exposure.Mould,
-    exposure.DEHP,
-    exposure.DIDP,
-    exposure.DINP,
-    exposure.Chromium,
-    exposure.Lead,
-    exposure.Mercury
-  )
-  
-  emp.map <- read_excel("C:\\TEMP\\employment_mapping.xlsx", sheet = "employment_mapping")
-  emp.map <- emp.map[, c("EMP.scode", "empstat", "emp", "student", "retired")]
-  
-  # merge exposure data using MTUS 'empstat' nomenclature and employment type (or economic status) from EU-SILC named here 'EMP.scode'
-  exposure.all <- merge(
-    x = exposure.all,
-    y = emp.map,
-    by = c("empstat", "emp", "student", "retired"),
-    sort = T
-  )
-  # move 'EMP.scode" to be the first column
-  exposure.all <- exposure.all[c("STRESSOR", "EMP.scode", setdiff(names(exposure.all), list("STRESSOR", "EMP.scode")))]
-  
-  #sort(unique(exposure.all[ exposure.all$sample_ID == INDIV_SUBJID, ]$age))
-  return( exposure.all )
-}
+PATH <- "N:\\tfu\\552_HEALS\\Projektarbeit\\WP11"
 
 parallel.lifelong.exposure <- function(i) {
   
@@ -522,7 +158,7 @@ parallel.lifelong.exposure <- function(i) {
   cl <- makeCluster(NUM_CORES)
   #cl <- makeCluster( mpi.universe.size() - 2, type="MPI" )
   
-  clusterEvalQ(cl, library(lifeExposureTrajectories))
+  clusterEvalQ(cl, library(lifeCourseExposureTrajectories))
   clusterEvalQ(cl, library(readxl))
   clusterEvalQ(cl, library(parallel))
   
@@ -532,10 +168,8 @@ parallel.lifelong.exposure <- function(i) {
   clusterExport(cl, "st")
   clusterExport(cl, "data.seq")
   clusterExport(cl, "individuals")
-  clusterExport(cl, "determine.full.traj")
-  clusterExport(cl, "parallel.lifetraj")
-  clusterExport(cl, "get.exposure.data")
-  #clusterExport(cl, "cs.data.IT")
+  #clusterExport(cl, "par_determineFullTraj")
+  #clusterExport(cl, "par_lifeTrajSim")
   
   #sim.results <- NULL
   
@@ -546,18 +180,24 @@ parallel.lifelong.exposure <- function(i) {
   INDIV_EDU <- individuals$edulevel[i]
   
   econ.stat <- subset(
-    cs.data.IT, 
+    edu.data, 
     (ESTIMATED.AGE >= INDIV_AGE-1 & ESTIMATED.AGE <= INDIV_AGE+1) & EDULEVEL == INDIV_EDU & SEX == INDIV_SEX
   )$ECON.STATUS.CURR.SELFDEF
   INDIV_ACT <- data.scodes[ sample(econ.stat, 1) ]
   
-  sim.results.grpd <- determine.full.traj(cl, INDIV_SUBJID, INDIV_AGE, INDIV_SEX, INDIV_EDU, INDIV_ACT)
+  #sim.results.grpd <- par_determineFullTraj(cl, INDIV_SUBJID, INDIV_AGE, INDIV_SEX, INDIV_EDU, INDIV_ACT)
+  sim.results.grpd <- lifeCourseExposureTrajectories::determineFullTraj(INDIV_SUBJID, INDIV_AGE, INDIV_SEX, INDIV_EDU, INDIV_ACT)
+  
   stopifnot( length(unique(sim.results.grpd$INDIV_SUBJID)) == 1 )
   
   ##write.csv(sim.results.grpd, file = paste0("C:\\TEMP\\sim-out\\lifetraj-", INDIV_SUBJID, ".csv"), row.names=F)
   message("Daily exposures ...")
   
-  exposure.all <- get.exposure.data(INDIV_SUBJID)
+  exposure.all <- lifeCourseExposureTrajectories::getExposureData(
+    INDIV_SUBJID, 
+    PATH, 
+    stressors = c("NO2", "UV", "EMF")
+  )
   stopifnot( length(unique(exposure.all$sample_ID)) == 1 )
   
   # impute based on 'surrounding' age for same individual if data for specific age is missing
@@ -787,7 +427,7 @@ parallel.lifelong.exposure <- function(i) {
   return( sample.exp.stats )
 }
 
-individuals <- read.csv("N:\\tfu\\552_HEALS\\Projektarbeit\\WP11\\Stream 5 data\\stream5SampleData3.csv")
+individuals <- read.csv(paste0(PATH, "\\Stream 5 data\\stream5SampleData3.csv"))
 
 library(readxl)
 
@@ -800,20 +440,18 @@ NUM_CORES <- parallel::detectCores() - NUM_MASTER_CORES - 1
 
 cl.master <- makeCluster(NUM_MASTER_CORES)
 
-clusterEvalQ(cl.master, library(lifeExposureTrajectories))
+clusterEvalQ(cl.master, library(lifeCourseExposureTrajectories))
 clusterEvalQ(cl.master, library(readxl))
 clusterEvalQ(cl.master, library(parallel))
 
 clusterExport(cl.master, "NUM_SIM")
 clusterExport(cl.master, "NUM_CORES")
+clusterExport(cl.master, "PATH")
 clusterExport(cl.master, "df")
 clusterExport(cl.master, "st")
 clusterExport(cl.master, "data.seq")
+clusterExport(cl.master, "edu.data")
 clusterExport(cl.master, "individuals")
-clusterExport(cl.master, "determine.full.traj")
-clusterExport(cl.master, "parallel.lifetraj")
-clusterExport(cl.master, "get.exposure.data")
-clusterExport(cl.master, "cs.data.IT")
 
 require(tictoc)
 tic()
