@@ -8,118 +8,69 @@ devtools::document("..//lifeCourseExposureTrajectories")
 devtools::install("..//lifeCourseExposureTrajectories")
 library(lifeCourseExposureTrajectories)
 
-H.files.cs <- c(
-  "K:/EU-SILC cross-sectional/1 C-2004/UDB_c04H_ver 2004-4 from 01-08-09.csv",
-  "K:/EU-SILC cross-sectional/2 C-2005/UDB_c05H_ver 2005-5 from 01-08-09.csv",
-  "K:/EU-SILC cross-sectional/3 C-2006/UDB_c06H_ver 2006-4 from 01-03-10.csv",
-  "K:/EU-SILC cross-sectional/4 C-2007/UDB_c07H_ver 2007-6 from 01-08-11.csv",
-  "K:/EU-SILC cross-sectional/5 C-2008/UDB_c08H_ver 2008-7 from 01-03-15.csv",
-  "K:/EU-SILC cross-sectional/6 C-2009/UDB_c09H_ver 2009-7 from 01-03-15.csv",
-  "K:/EU-SILC cross-sectional/7 C-2010/UDB_c10H_ver 2010-6 from 01-03-15.csv",
-  "K:/EU-SILC cross-sectional/8 C-2011/UDB_c11H_ver 2011-5 from 01-03-15.csv",
-  "K:/EU-SILC cross-sectional/9 C-2012/UDB_c12H_ver 2012-3 from 01-03-15.csv",
-  "K:/EU-SILC cross-sectional/10 C-2013/UDB_c13H_ver 2013-2 from 01-08-15.csv"
+FOLDER_CROSS_SECTIONAL <- "K:/EU-SILC cross-sectional/"
+FOLDER_LONGITUDINAL <- "K:/EU-SILC longitudinal/"
+
+# Read cross-sectional data of individuals from H-files.
+# First, read household data:
+H.files.cs <- paste0(
+  FOLDER_CROSS_SECTIONAL,  
+  list.files(FOLDER_CROSS_SECTIONAL, pattern="UDB_c(.+)H_ver(.+).csv", recursive = T)
 )
+
 cs.hh.data.all <- lifeCourseExposureTrajectories::readHouseholdData(H.files.cs)
 
-P.files.cs <- c(
-  "K:/EU-SILC cross-sectional/6 C-2009/UDB_c09P_ver 2009-7 from 01-03-15.csv",
-  "K:/EU-SILC cross-sectional/7 C-2010/UDB_c10P_ver 2010-6 from 01-03-15.csv",
-  "K:/EU-SILC cross-sectional/8 C-2011/UDB_c11P_ver 2011-5 from 01-03-15.csv",
-  "K:/EU-SILC cross-sectional/9 C-2012/UDB_c12P_ver 2012-3 from 01-03-15.csv",
-  "K:/EU-SILC cross-sectional/10 C-2013/UDB_c13P_ver 2013-2 from 01-08-15.csv"
+# Second, read individual data (P- and R-files) and merge it with household data:
+P.files.cs <- paste0(
+  FOLDER_CROSS_SECTIONAL, 
+  list.files(FOLDER_CROSS_SECTIONAL, pattern="UDB_c(09|10|11|12|13)P_ver(.+).csv", recursive = T)
 )
-R.files.cs <- c(
-  "K:/EU-SILC cross-sectional/6 C-2009/UDB_c09R_ver 2009-7 from 01-03-15.csv",
-  "K:/EU-SILC cross-sectional/7 C-2010/UDB_c10R_ver 2010-6 from 01-03-15.csv",
-  "K:/EU-SILC cross-sectional/8 C-2011/UDB_c11R_ver 2011-5 from 01-03-15.csv",
-  "K:/EU-SILC cross-sectional/9 C-2012/UDB_c12R_ver 2012-3 from 01-03-15.csv",
-  "K:/EU-SILC cross-sectional/10 C-2013/UDB_c13R_ver 2013-2 from 01-08-15.csv"
+R.files.cs <- paste0(
+  FOLDER_CROSS_SECTIONAL, 
+  list.files(FOLDER_CROSS_SECTIONAL, pattern="UDB_c(09|10|11|12|13)R_ver(.+).csv", recursive = T)
 )
 
 cs.data.all <- lifeCourseExposureTrajectories::readIndividualData(P.files.cs, R.files.cs, cs.hh.data.all)
-hist(cs.data.all$ESTIMATED.AGE, breaks=25)
 
+# Free up household data to reduce memory footprint.
 rm(cs.hh.data.all)
+
+# Show countries covered by cross-sectional data:
 unique(cs.data.all$COUNTRY)
 
-#unique(paste(cs.data.all$CURRENT.EDU.TYPE.LABEL, cs.data.all$CURRENT.EDU.TYPE))
-#unique(paste(cs.data.all$HIGHEST.ATTAINED.EDU.LABEL, cs.data.all$HIGHEST.ATTAINED.EDU))
 
-#temp <- cs.data.all[ cs.data.all$CURRENT.EDU.TYPE == -2 | (as.numeric(cs.data.all$CURRENT.EDU.TYPE) >= as.numeric(cs.data.all$HIGHEST.ATTAINED.EDU) ), ]
-#table(cs.data.all$ECON.STATUS.CURR.SELFDEF)
+# Now, read longitudinal data derived from periodic interviews over 4 years.
+# Again, read household data first (H-files):
+#
+H.files.lon <- paste0(FOLDER_LONGITUDINAL, 
+                     list.files(FOLDER_LONGITUDINAL, pattern="UDB_(l|L)(06|07|08|09|10|11|12|13)H_ver(.+).csv", recursive = T))
 
-H.files.lon <- c(
-  "K:/EU-SILC longitudinal/2 L-2006/UDB_L06H_ver 2006-2 from 01-03-2009.csv",
-  "K:/EU-SILC longitudinal/3 L-2007/UDB_l07H_ver 2007-5 from 01-08-2011.csv",
-  "K:/EU-SILC longitudinal/4 L-2008/UDB_l08H_ver 2008-4 from 01-03-2012.csv",
-  "K:/EU-SILC longitudinal/5 L-2009/UDB_l09H_ver 2009-4 from 01-03-2013.csv",
-  "K:/EU-SILC longitudinal/6 L-2010/UDB_l10H_ver 2010-5 from 01-08-2014.csv",
-  "K:/EU-SILC longitudinal/7 L-2011/UDB_l11H_ver 2011-4 from 01-03-2015.csv",
-  "K:/EU-SILC longitudinal/8 L-2012/UDB_l12H_ver 2012-3 from 01-08-2015.csv",
-  "K:/EU-SILC longitudinal/9 L-2013/UDB_l13H_ver 2013-1 from 01-08-2015.csv"
-)
 lon.hh.data.all <- lifeCourseExposureTrajectories::readHouseholdData(H.files.lon)
 
-unique(lon.hh.data.all$COUNTRY)
+# If only perople from a specific subset of countries are considered, think about
+# filtering by country code as this will reduce overall memory usage!
+#
+# IMPORTANT:  In the following, we will drop all countries but Austria.
+#
 lon.hh.data.all <- subset(lon.hh.data.all, COUNTRY %in% c("AT"))
-unique(lon.hh.data.all$COUNTRY)
 
-P.files.lon <- c(
-  "K:/EU-SILC longitudinal/2 L-2006/UDB_L06P_ver 2006-2 from 01-03-2009.csv",
-  "K:/EU-SILC longitudinal/3 L-2007/UDB_l07P_ver 2007-5 from 01-08-2011.csv",
-  "K:/EU-SILC longitudinal/4 L-2008/UDB_l08P_ver 2008-4 from 01-03-2012.csv",
-  "K:/EU-SILC longitudinal/5 L-2009/UDB_l09P_ver 2009-4 from 01-03-2013.csv",
-  "K:/EU-SILC longitudinal/6 L-2010/UDB_l10P_ver 2010-5 from 01-08-2014.csv",
-  "K:/EU-SILC longitudinal/7 L-2011/UDB_l11P_ver 2011-4 from 01-03-2015.csv",
-  "K:/EU-SILC longitudinal/8 L-2012/UDB_l12P_ver 2012-3 from 01-08-2015.csv",
-  "K:/EU-SILC longitudinal/9 L-2013/UDB_l13P_ver 2013-1 from 01-08-2015.csv"
-)
+# Secondly, all longitudinal data on individuals is collected (P-files):
+P.files.lon <- paste0(FOLDER_LONGITUDINAL, 
+                      list.files(FOLDER_LONGITUDINAL, pattern="UDB_(l|L)(06|07|08|09|10|11|12|13)P_ver(.+).csv", recursive = T))
+
 data.rshp <- lifeCourseExposureTrajectories::readIndividualSeq(P.files.lon, lon.hh.data.all)
 unique(data.rshp$CNTRY)
 
+# Free up household data to reduce memory footprint.
 rm(lon.hh.data.all)
 
-## PL031: Self-defined current economic status
-##
-## 1 Employee working full-time
-## 2 Employee working part-time
-## 3 Self-employed working full-time (including family worker)
-## 4 Self-employed working part-time (including family worker)
-## 5 Unemployed
-## 6 Pupil, student, further training, unpaid work experience
-## 7 In retirement or in early retirement or has given up business
-## 8 Permanently disabled or/and unfit to work
-## 9 In compulsory military community or service
-## 10 Fulfilling domestic tasks and care responsibilities
-## 11 Other inactive person
-
-seqstatl(data.rshp[, 8:11])
-
-# data.alphabet <- seq(1:11)
-# data.labels <- c(
-#   "Employee working full-time",
-#   "Employee working part-time",
-#   "Self-employed working full-time (including family worker)",
-#   "Self-employed working part-time (including family worker)",
-#   "Unemployed",
-#   "Pupil, student, further training, unpaid work experience",
-#   "In retirement or in early retirement or has given up business",
-#   "Permanently disabled or/and unfit to work",
-#   "In compulsory military community or service",
-#   "Fulfilling domestic tasks and care responsibilities",
-#   "Other inactive person"
-# )
-# data.scodes <- c("EWFT",  "EWPT",  "SEFT",  "SEPT",  "UNEM",  "STUD",  "RETD",  "UNFT",  "CMCS",  "DOME",  "INAC")
-data.seq <- seqdef(data.rshp, 8:11, alphabet = data.alphabet[1:11], states = data.scodes[1:11], labels = data.labels[1:11], xtstep = 1)
+#data.seq <- seqdef(data.rshp, 8:11, alphabet = data.alphabet[1:11], states = data.scodes[1:11], labels = data.labels[1:11], xtstep = 1)
 
 # markov.chain <- lifeExposureTrajectories::asMarkovChain(data.seq, data.scodes)
 # lifeExposureTrajectories::plotMarkovChain(markov.chain)
 
 data.rshp.subset <- lifeCourseExposureTrajectories::stratifiedSeqSample(data.rshp, 0.25)
-
-#help(memory.size)
-#memory.limit(size=48000)
+data.seq <- seqdef(data.rshp.subset, 8:11, alphabet = data.alphabet[1:11], states = data.scodes[1:11], labels = data.labels[1:11], xtstep = 1)
 rm(data.rshp)
 gc()
 
@@ -134,8 +85,6 @@ seqtreedisplay(
   with.legend = F, 
   gvpath = 'C:\\Program Files (x86)\\GraphViz'
 )
-
-df <- lifeCourseExposureTrajectories::traversePreOrder(st$root)
 
 edu.data <- lifeCourseExposureTrajectories::getCrossSectEdu(cs.data.all, country.filter = unique(data.rshp.subset$CNTRY))
 rm(cs.data.all)
@@ -168,7 +117,6 @@ clusterEvalQ(cl.master, library(readxl))
 clusterEvalQ(cl.master, library(parallel))
 
 clusterExport(cl.master, "config")
-clusterExport(cl.master, "df")
 clusterExport(cl.master, "st")
 clusterExport(cl.master, "data.seq")
 clusterExport(cl.master, "edu.data")
