@@ -11,6 +11,11 @@ library(lifeCourseExposureTrajectories)
 FOLDER_CROSS_SECTIONAL <- "K:/EU-SILC cross-sectional/"
 FOLDER_LONGITUDINAL <- "K:/EU-SILC longitudinal/"
 
+
+########################################################################################################
+# Step 1: Read cross-sectional and longitudinal EU-SILC data and create the sequence regression tree.
+########################################################################################################
+
 # Read cross-sectional data of individuals from H-files.
 # First, read household data:
 H.files.cs <- paste0(
@@ -90,28 +95,45 @@ edu.data <- lifeCourseExposureTrajectories::getCrossSectEdu(cs.data.all, country
 rm(cs.data.all)
 gc()
 
-################################
-#
-# PARALLEL PART
-#
-################################
+
+########################################################################################################
+# Step 2: Run the lifecourse trajectory model on a number of individuals in parallel.
+########################################################################################################
 library(readxl)
 library(parallel)
+library(tictoc)
 
+# Create a configuration object of the life-course trajectory model and
+# set the path to the input files.
+#
 config <- lifeCourseExposureTrajectories::defaultConfig(
   path = "N:\\tfu\\552_HEALS\\Projektarbeit\\WP11",
-  sample.size = 100
+  sample.size = 100,
+  num.sim = 100
 )
 
-config[["NUM_SIM"]] <- 100
+# The list of stressors for which the model will run.
+#
 config[["stressors"]] <- c("NO2", "UV", "EMF")
 
+# Read information of the individuals for which the lifecourse exposure
+# should be modelled.
+#
 individuals <- read.csv(paste0(config[["PATH"]], "\\Stream 5 data\\stream5SampleData3.csv"))
+
+# Test whether each individual has a unique identifier.
+#
 stopifnot( length(individuals$id) == length(unique(individuals$id)) )
 
 
+# Create a cluster object. Here a local cluster with 2 master cores will be initialized.
+# The remaining cores will be used to run the exposure estimation and sampling.
+#
 cl.master <- makeCluster(config[["NUM_MASTER_CORES"]])
 
+# Make sure all nodes in the cluster hold the necessary R libraries.
+# Furthermore, share some variables across the cluster.
+#
 clusterEvalQ(cl.master, library(lifeCourseExposureTrajectories))
 clusterEvalQ(cl.master, library(readxl))
 clusterEvalQ(cl.master, library(parallel))
@@ -122,24 +144,31 @@ clusterExport(cl.master, "data.seq")
 clusterExport(cl.master, "edu.data")
 clusterExport(cl.master, "individuals")
 
-require(tictoc)
+# Start a timer ...
+#
 tic()
 
+# Run the estimation and parallelize across the individuals.
+#
 sim.results <- parLapply(
   cl.master,
   402:403, 
   par_lifeCourseExposure
 )
+
+# Combine the statistics of all individuals.
+#
 sample.exp.stats <- do.call(rbind.data.frame, sim.results)
 
+# Stop the timer and shut down the cluster.
+#
 exectime <- toc()
 exectime <- exectime$toc - exectime$tic
 exectime
 
 stopCluster(cl.master)  
 
-unique(sample.exp.stats$INDIV_SUBJID)
-
+length(unique(sample.exp.stats$INDIV_SUBJID))
 
 
 ##################
