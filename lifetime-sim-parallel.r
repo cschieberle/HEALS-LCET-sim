@@ -146,31 +146,28 @@ gc()
 # PARALLEL PART
 #
 ################################
-
-
-
-PATH <- "N:\\tfu\\552_HEALS\\Projektarbeit\\WP11"
-
-individuals <- read.csv(paste0(PATH, "\\Stream 5 data\\stream5SampleData3.csv"))
-
 library(readxl)
-
-NUM_SIM <- 100
-
 library(parallel)
 
-NUM_MASTER_CORES <- 2
-NUM_CORES <- parallel::detectCores() - NUM_MASTER_CORES - 1
+config <- lifeCourseExposureTrajectories::defaultConfig(
+  path = "N:\\tfu\\552_HEALS\\Projektarbeit\\WP11",
+  sample.size = 100
+)
 
-cl.master <- makeCluster(NUM_MASTER_CORES)
+config[["NUM_SIM"]] <- 100
+config[["stressors"]] <- c("NO2", "UV", "EMF")
+
+individuals <- read.csv(paste0(config[["PATH"]], "\\Stream 5 data\\stream5SampleData3.csv"))
+stopifnot( length(individuals$id) == length(unique(individuals$id)) )
+
+
+cl.master <- makeCluster(config[["NUM_MASTER_CORES"]])
 
 clusterEvalQ(cl.master, library(lifeCourseExposureTrajectories))
 clusterEvalQ(cl.master, library(readxl))
 clusterEvalQ(cl.master, library(parallel))
 
-clusterExport(cl.master, "NUM_SIM")
-clusterExport(cl.master, "NUM_CORES")
-clusterExport(cl.master, "PATH")
+clusterExport(cl.master, "config")
 clusterExport(cl.master, "df")
 clusterExport(cl.master, "st")
 clusterExport(cl.master, "data.seq")
