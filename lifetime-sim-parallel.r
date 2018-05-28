@@ -107,7 +107,11 @@ library(tictoc)
 # set the path to the input files.
 #
 config <- lifeCourseExposureTrajectories::defaultConfig(
-  path = "N:\\tfu\\552_HEALS\\Projektarbeit\\WP11",
+  path = "N:/tfu/552_HEALS/Projektarbeit/WP11",
+  subfolder.output = "output-20180528",
+  write.output = TRUE,
+  subfolder.exposure = "ITR sample exposure_for Cara",
+  employment.mapping = "employment_mapping.xlsx",
   sample.size = 100,
   num.sim = 100
 )
@@ -119,7 +123,7 @@ config[["stressors"]] <- c("NO2", "UV", "EMF")
 # Read information of the individuals for which the lifecourse exposure
 # should be modelled.
 #
-individuals <- read.csv(paste0(config[["PATH"]], "\\Stream 5 data\\stream5SampleData3.csv"))
+individuals <- read.csv(paste0(config[["PATH"]], "/Stream 5 data/stream5SampleData3.csv"))
 
 # Test whether each individual has a unique identifier.
 #
