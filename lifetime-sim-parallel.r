@@ -8,6 +8,7 @@ devtools::document("..//lifeCourseExposureTrajectories")
 devtools::install("..//lifeCourseExposureTrajectories")
 library(lifeCourseExposureTrajectories)
 
+
 FOLDER_CROSS_SECTIONAL <- "K:/EU-SILC cross-sectional/"
 FOLDER_LONGITUDINAL <- "K:/EU-SILC longitudinal/"
 
@@ -107,11 +108,13 @@ library(tictoc)
 # set the path to the input files.
 #
 config <- lifeCourseExposureTrajectories::defaultConfig(
+  #path = "Y:/Users/xnl/KUNO_kids/woman",
   path = "N:/tfu/552_HEALS/Projektarbeit/WP11",
-  subfolder.output = "output-20180528",
-  write.output = TRUE,
+  subfolder.output = paste0("output-", format(Sys.Date(), format="%Y-%m-%d")),
+  write.output = FALSE,
+  #subfolder.exposure = "data",
   subfolder.exposure = "ITR sample exposure_for Cara",
-  employment.mapping = "employment_mapping.xlsx",
+  #employment.mapping = "employment_mapping.xlsx",
   sample.size = 100,
   num.sim = 100
 )
@@ -119,15 +122,25 @@ config <- lifeCourseExposureTrajectories::defaultConfig(
 # The list of stressors for which the model will run.
 #
 config[["stressors"]] <- c("NO2", "UV", "EMF")
+#config[["stressors"]] <- c("PM25")
 
 # Read information of the individuals for which the lifecourse exposure
 # should be modelled.
 #
-individuals <- read.csv(paste0(config[["PATH"]], "/Stream 5 data/stream5SampleData3.csv"))
+individuals_csv <- read.csv(paste0("N:/tfu/552_HEALS/Projektarbeit/WP11/Stream 5 data/stream5SampleData3.csv"))
 
-# Test whether each individual has a unique identifier.
-#
-stopifnot( length(individuals$id) == length(unique(individuals$id)) )
+individuals <- NULL
+for (i in 1:nrow(individuals_csv)) {
+  individuals <- c(
+    individuals,   
+    new("Individual", 
+        id = as.character(individuals_csv[i,]$id),
+        age = individuals_csv[i,]$age,
+        sex = individuals_csv[i,]$sex,
+        edulevel = individuals_csv[i,]$edulevel
+    )
+  )
+}
 
 
 # Create a cluster object. Here a local cluster with 2 master cores will be initialized.
@@ -156,7 +169,7 @@ tic()
 #
 sim.results <- parLapply(
   cl.master,
-  which(individuals$id %in% c("10402", "10403")), 
+  402:403, 
   par_lifeCourseExposure
 )
 
