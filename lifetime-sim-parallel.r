@@ -107,69 +107,92 @@ library(tictoc)
 # Create a configuration object of the life-course trajectory model and
 # set the path to the input files.
 #
+# config <- lifeCourseExposureTrajectories::defaultConfig(
+#   path = "N:/tfu/552_HEALS/Projektarbeit/WP11",
+#   subfolder.output = paste0("output-", format(Sys.Date(), format="%Y-%m-%d")),
+#   write.output = FALSE,
+#   subfolder.exposure = "ITR sample exposure_for Cara",
+#   sample.size = 100,
+#   num.sim = 100
+# )
 config <- lifeCourseExposureTrajectories::defaultConfig(
-  #path = "Y:/Users/xnl/KUNO_kids/woman",
-  path = "N:/tfu/552_HEALS/Projektarbeit/WP11",
+  path = "Y:/Users/xnl/KUNO_kids/woman",
   subfolder.output = paste0("output-", format(Sys.Date(), format="%Y-%m-%d")),
-  write.output = FALSE,
-  #subfolder.exposure = "data",
-  subfolder.exposure = "ITR sample exposure_for Cara",
-  #employment.mapping = "employment_mapping.xlsx",
+  write.output = TRUE,
+  subfolder.exposure = "data",
+  employment.mapping = "employment_mapping.xlsx",
   sample.size = 100,
   num.sim = 100
 )
+config[["CSV_SEP"]] <- ';'
+config[["CSV_DEC"]] <- ','
+config[["CLUSTER_OUTFILE"]] <- paste0(config[["PATH_OUTPUT"]], "/clusterout.txt")
 
 # The list of stressors for which the model will run.
 #
-config[["stressors"]] <- c("NO2", "UV", "EMF")
-#config[["stressors"]] <- c("PM25")
+#config[["stressors"]] <- c("NO2", "UV", "EMF")
+config[["stressors"]] <- c("PM25")
 
 # Read information of the individuals for which the lifecourse exposure
 # should be modelled.
 #
-individuals_csv <- read.csv(paste0("N:/tfu/552_HEALS/Projektarbeit/WP11/Stream 5 data/stream5SampleData3.csv"))
-
+# individuals_csv <- read.csv(paste0("N:/tfu/552_HEALS/Projektarbeit/WP11/Stream 5 data/stream5SampleData3.csv"))
+# individuals <- NULL
+# for (i in 1:nrow(individuals_csv)) {
+#   individuals <- c(
+#     individuals,   
+#     new("Individual", 
+#         id = as.character(individuals_csv[i,]$id),
+#         age = individuals_csv[i,]$age,
+#         sex = individuals_csv[i,]$sex,
+#         edulevel = individuals_csv[i,]$edulevel
+#     )
+#   )
+# }
+individuals_csv <- read.csv(
+  paste0("N:/tfu/552_HEALS/Projektarbeit/Application/KUNO_Kids/KUNO_trial/KUNO_women_SES_variables.csv"),
+  sep = ";"
+)
 individuals <- NULL
 for (i in 1:nrow(individuals_csv)) {
-  individuals <- c(
-    individuals,   
-    new("Individual", 
-        id = as.character(individuals_csv[i,]$id),
-        age = individuals_csv[i,]$age,
-        sex = individuals_csv[i,]$sex,
-        edulevel = individuals_csv[i,]$edulevel
+  if (individuals_csv[i,]$edcat_kuno > -1) {
+    individuals <- c(
+      individuals,
+      new("Individual",
+          id = as.character(individuals_csv[i,]$identifier),
+          age = individuals_csv[i,]$age,
+          sex = "F",
+          edulevel = (individuals_csv[i,]$edcat_kuno - 1)
+      )
     )
-  )
+  }
 }
-
 
 # Create a cluster object. Here a local cluster with 2 master cores will be initialized.
 # The remaining cores will be used to run the exposure estimation and sampling.
 #
-cl.master <- makeCluster(config[["NUM_MASTER_CORES"]])
+cl.master <- makeCluster(config[["NUM_MASTER_CORES"]], outfile = config[["CLUSTER_OUTFILE"]])
 
 # Make sure all nodes in the cluster hold the necessary R libraries.
 # Furthermore, share some variables across the cluster.
 #
-clusterEvalQ(cl.master, library(lifeCourseExposureTrajectories))
-clusterEvalQ(cl.master, library(readxl))
-clusterEvalQ(cl.master, library(parallel))
+clusterEvalQ(cl.master, library(lifeCourseExposureTrajectories, quietly = T))
+clusterEvalQ(cl.master, library(readxl, quietly = T))
+clusterEvalQ(cl.master, library(parallel, quietly = T))
+clusterExport(cl.master, varlist = c("config", "st", "data.seq", "edu.data", "individuals"))
 
-clusterExport(cl.master, "config")
-clusterExport(cl.master, "st")
-clusterExport(cl.master, "data.seq")
-clusterExport(cl.master, "edu.data")
-clusterExport(cl.master, "individuals")
 
 # Start a timer ...
 #
 tic()
 
+memory.limit(24000)
+
 # Run the estimation and parallelize across the individuals.
 #
 sim.results <- parLapply(
   cl.master,
-  402:403, 
+  1:10, 
   par_lifeCourseExposure
 )
 
