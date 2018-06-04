@@ -107,14 +107,6 @@ library(tictoc)
 # Create a configuration object of the life-course trajectory model and
 # set the path to the input files.
 #
-# config <- lifeCourseExposureTrajectories::defaultConfig(
-#   path = "N:/tfu/552_HEALS/Projektarbeit/WP11",
-#   subfolder.output = paste0("output-", format(Sys.Date(), format="%Y-%m-%d")),
-#   write.output = FALSE,
-#   subfolder.exposure = "ITR sample exposure_for Cara",
-#   sample.size = 100,
-#   num.sim = 100
-# )
 config <- lifeCourseExposureTrajectories::defaultConfig(
   path = "Y:/Users/xnl/KUNO_kids/woman",
   subfolder.output = paste0("output-", format(Sys.Date(), format="%Y-%m-%d")),
@@ -136,19 +128,6 @@ config[["stressors"]] <- c("PM25")
 # Read information of the individuals for which the lifecourse exposure
 # should be modelled.
 #
-# individuals_csv <- read.csv(paste0("N:/tfu/552_HEALS/Projektarbeit/WP11/Stream 5 data/stream5SampleData3.csv"))
-# individuals <- NULL
-# for (i in 1:nrow(individuals_csv)) {
-#   individuals <- c(
-#     individuals,   
-#     new("Individual", 
-#         id = as.character(individuals_csv[i,]$id),
-#         age = individuals_csv[i,]$age,
-#         sex = individuals_csv[i,]$sex,
-#         edulevel = individuals_csv[i,]$edulevel
-#     )
-#   )
-# }
 individuals_csv <- read.csv(
   paste0("N:/tfu/552_HEALS/Projektarbeit/Application/KUNO_Kids/KUNO_trial/KUNO_women_SES_variables.csv"),
   sep = ";"
@@ -181,12 +160,13 @@ clusterEvalQ(cl.master, library(readxl, quietly = T))
 clusterEvalQ(cl.master, library(parallel, quietly = T))
 clusterExport(cl.master, varlist = c("config", "st", "data.seq", "edu.data", "individuals"))
 
+# Increase memory limit ...
+#
+memory.limit(24000)
 
 # Start a timer ...
 #
 tic()
-
-memory.limit(24000)
 
 # Run the estimation and parallelize across the individuals.
 #
