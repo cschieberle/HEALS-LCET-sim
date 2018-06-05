@@ -5,14 +5,15 @@
 # Lifecourse Exposure Trajectory Simulation
 Lifecourse exposure trajectory simulation for HEALS
 
-The simulation of life-long exposure trajectories is based on the 
+The simulation of life-long exposure trajectories is based on the following R library: 
+```{r}
+library(lifeCourseExposureTrajectories)
+```
 
 ## Configuration
 
 To run simulations a configuration object needs to be created:
 ```{r}
-library(lifeCourseExposureTrajectories)
-
 config = lifeCourseExposureTrajectories::defaultConfig()
 ```
 
