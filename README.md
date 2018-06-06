@@ -65,7 +65,7 @@ The expected folder structure is as follows:
 * output-2018-06-05
 
 Within each stressor folder (e.g. PM25) a number of CSV files is expected. Each of them having the following name format:
-```{r}
-PM25_exposure_sample_f4331967-15d1-4094-be76-a34fa77fbf4c.csv
-```
+
+> PM25_exposure_sample_f4331967-15d1-4094-be76-a34fa77fbf4c.csv
+
 where PM25 is a stressor and f4331967-15d1-4094-be76-a34fa77fbf4c is an identifier of an individual.
