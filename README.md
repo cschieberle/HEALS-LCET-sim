@@ -10,6 +10,10 @@ The simulation of life-long exposure trajectories is based on the following R li
 library(lifeCourseExposureTrajectories)
 ```
 
+Please refer to the following source when using the library:
+
+**Schieberle, C.; Li, N.; Friedrich, R.: *Life course exposure trajectories: A probabilistic model for prospective and retrospective exposure characterization.* 19th International Symposium on Environmental Pollution and its Impact on Life in the Mediterranean (Accepted for oral presentation), Rome, Italy, 4-6 October 2017.**
+
 ## Configuration
 
 To run simulations a configuration object needs to be created:
