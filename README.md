@@ -69,3 +69,11 @@ Within each stressor folder (e.g. PM25) a number of CSV files is expected. Each 
 > PM25_exposure_sample_f4331967-15d1-4094-be76-a34fa77fbf4c.csv
 
 where PM25 is a stressor and f4331967-15d1-4094-be76-a34fa77fbf4c is an identifier of an individual.
+
+## Log files
+
+A log file is generated while the simulation runs. The file is put in the output folder (see section on general configuration).
+The file is continuously updated while the simulation is being executed.
+The file can be monitored as follows:
+
+> powershell Get-Content PATH_OUTPUT/clusterout.txt -wait
