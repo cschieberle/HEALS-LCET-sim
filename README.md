@@ -12,7 +12,7 @@ library(lifeCourseExposureTrajectories)
 
 Please refer to the following source when using the library:
 
-**Schieberle, C.; Li, N.; Friedrich, R.: *Life course exposure trajectories: A probabilistic model for prospective and retrospective exposure characterization.* 19th International Symposium on Environmental Pollution and its Impact on Life in the Mediterranean, Rome, Italy, 4-6 October 2017.**
+> **Schieberle, C.; Li, N.; Friedrich, R.: *Life course exposure trajectories: A probabilistic model for prospective and retrospective exposure characterization.* 19th International Symposium on Environmental Pollution and its Impact on Life in the Mediterranean, Rome, Italy, 4-6 October 2017.**
 
 ## Configuration
 
