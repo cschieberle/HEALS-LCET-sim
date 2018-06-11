@@ -109,7 +109,7 @@ library(tictoc)
 #
 config <- lifeCourseExposureTrajectories::defaultConfig(
   path = "Y:/Users/xnl/KUNO_kids/woman",
-  subfolder.output = paste0("output-", format(Sys.Date(), format="%Y-%m-%d")),
+  subfolder.output = paste0("output_", format(Sys.time(), format="%Y-%m-%d-%H%M%S")),
   write.output = TRUE,
   subfolder.exposure = "data",
   employment.mapping = "employment_mapping.xlsx",
